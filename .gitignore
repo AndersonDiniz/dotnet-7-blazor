@@ -6,6 +6,8 @@
 bin/
 obj/
 
+Release
+
 # Common node modules locations
 /node_modules
 /wwwroot/node_modules
