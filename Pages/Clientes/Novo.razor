@@ -6,6 +6,8 @@
 @inject ClienteServico ClienteServico
 @inject IJSRuntime JsRuntime;
 @inject NavigationManager NavManager
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@inject ProtectedLocalStorage BrowserStorage
 
 <PageTitle>Novo Cliente</PageTitle>
 
@@ -24,7 +26,7 @@
 @code {
     private async Task HandleValidSubmit()
     {
-        await ClienteServico.Incluir(cliente);
+        await ClienteServico.Incluir(cliente, token);
         // estratégia 1 (alert)
         await JsRuntime.InvokeVoidAsync("alert", "Cadastrado com sucesso!");
 
@@ -39,4 +41,17 @@
     private string mensagem = string.Empty;
 
     private Cliente cliente = new Cliente();
+
+    private string? token { get;set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if(firstRender)
+            await AdministradorServico.RedirectLoginSeNaoLogado(BrowserStorage, NavManager);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        token = await AdministradorServico.GetToken(BrowserStorage);
+    }
 }

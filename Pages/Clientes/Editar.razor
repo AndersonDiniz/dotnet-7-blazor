@@ -6,6 +6,8 @@
 @inject ClienteServico ClienteServico
 @inject IJSRuntime JsRuntime;
 @inject NavigationManager NavManager
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@inject ProtectedLocalStorage BrowserStorage
 
 @if(@cliente is not null)
 {
@@ -31,9 +33,20 @@ else{
     [Parameter]
     public int Id { get;set; }
 
+    private string? token { get;set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if(firstRender)
+            await AdministradorServico.RedirectLoginSeNaoLogado(BrowserStorage, NavManager);
+    }
+
     protected override async Task OnInitializedAsync()
     {
-        this.cliente = await ClienteServico.BuscarPorId(Id);
+        token = await AdministradorServico.GetToken(BrowserStorage);
+        if(string.IsNullOrEmpty(token)) return;
+        
+        this.cliente = await ClienteServico.BuscarPorId(Id, token);
     }
 
     private async Task HandleValidSubmit()
@@ -44,7 +57,7 @@ else{
             return;
         }
 
-        await ClienteServico.Atualizar(cliente);
+        await ClienteServico.Atualizar(cliente, token);
         // estratégia 1 (alert)
         await JsRuntime.InvokeVoidAsync("alert", "Atualizado com sucesso!");
 

@@ -4,6 +4,9 @@
 @using Data.Servicos
 @inject ClienteServico ClienteServico
 @inject IJSRuntime JsRuntime
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@inject NavigationManager NavManager
+@inject ProtectedLocalStorage BrowserStorage
 
 <PageTitle>Lista de Clientes</PageTitle>
 
@@ -63,18 +66,28 @@ else
         bool confirmed = await JsRuntime.InvokeAsync<bool>("confirm", "Confirma?");
         if(confirmed)
         {
-            await ClienteServico.Excluir(cliente);
+            await ClienteServico.Excluir(cliente, token);
             await CarregaClientes();
         }
     }
 
     private async Task CarregaClientes()
     {
-        clientes = await ClienteServico.Todos();
+        clientes = await ClienteServico.Todos(token);
+    }
+    private string? token { get;set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if(firstRender)
+            await AdministradorServico.RedirectLoginSeNaoLogado(BrowserStorage, NavManager);
     }
 
     protected override async Task OnInitializedAsync()
     {
+        token = await AdministradorServico.GetToken(BrowserStorage);
+        if(string.IsNullOrEmpty(token)) return;
+        
         await CarregaClientes();
     }
 }
